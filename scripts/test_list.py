@@ -1,11 +1,20 @@
+"""
+Script de teste: valida listagem de compromissos via Outlook COM.
+
+Cria um evento de teste, tenta filtrar com Restrict e compara com list_appointments.
+Execute no terminal (requer Outlook configurado).
+"""
+
 from datetime import date, datetime, timedelta
 
 from app.models.appointment import Appointment
 from app.models.calendar_repository import CalendarRepository
 
+# Conecta ao Outlook
 r = CalendarRepository()
 r.connect()
 
+# Cria compromisso de teste para amanhã
 start = datetime.now() + timedelta(days=1)
 appt = Appointment("", "Teste parse COM", start, start + timedelta(hours=1))
 created = r.create(appt)
@@ -14,6 +23,7 @@ items = r._calendar_folder.Items
 items.IncludeRecurrences = True
 items.Sort("[Start]")
 
+# Intervalo de 30 dias a partir de hoje
 start_date = date.today()
 end_date = start_date + timedelta(days=30)
 restriction = (
@@ -47,4 +57,5 @@ listed = r.list_appointments(start_date, end_date)
 print("list_appointments count:", len(listed))
 print("test in list:", any("Teste parse" in a.subject for a in listed))
 
+# Remove o evento de teste
 r.delete(created.entry_id)

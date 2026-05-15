@@ -1,3 +1,10 @@
+"""
+Script de diagnóstico: testa acesso WinRT aos calendários do Windows.
+
+Não faz parte da interface gráfica. Execute no terminal para depurar permissões
+e listar calendários disponíveis via API WinRT.
+"""
+
 import asyncio
 from datetime import datetime, timedelta
 from winrt.windows.applicationmodel.appointments import (
@@ -8,6 +15,9 @@ from winrt.windows.applicationmodel.appointments import (
 
 
 async def main():
+    """
+    Para cada tipo de permissão, lista calendários e tenta criar um evento de teste.
+    """
     for access_name in ("ALL_CALENDARS_READ_WRITE", "APP_CALENDARS_READ_WRITE"):
         access = getattr(AppointmentStoreAccessType, access_name)
         print(f"\n=== {access_name} ===")

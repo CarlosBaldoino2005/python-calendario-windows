@@ -1,26 +1,35 @@
+"""
+Repositório do calendário via WinRT (API moderna do Windows).
+
+WinRT acessa o app "Calendário" do Windows diretamente, sem Outlook.
+Usa programação assíncrona (async/await); métodos públicos chamam asyncio.run().
+"""
+
 from __future__ import annotations
 
-import asyncio
+import asyncio  # Executa corrotinas async a partir de código síncrono
 from datetime import date, datetime, time, timedelta
 
 from app.models.appointment import Appointment
 
+# No WinRT, entry_id = "id_calendário|id_compromisso"
 ENTRY_SEP = "|"
 
 
 class CalendarConnectionError(Exception):
-    """Calendário do Windows indisponível."""
+    """Calendário do Windows indisponível ou sem permissão."""
 
 
 class WindowsCalendarRepository:
-    """CRUD no app Calendário do Windows via WinRT."""
+    """CRUD no app Calendário do Windows via pacotes winrt."""
 
     def __init__(self) -> None:
-        self._store = None
-        self._calendars: dict[str, object] = {}
-        self._default_calendar = None
+        self._store = None  # Loja de compromissos do sistema
+        self._calendars: dict[str, object] = {}  # local_id -> objeto calendário
+        self._default_calendar = None  # Calendário usado para criar novos eventos
 
     def connect(self) -> None:
+        """Pede permissão ao Windows e carrega a lista de calendários."""
         try:
             self._run(self._connect_async())
         except ImportError as exc:
@@ -38,6 +47,7 @@ class WindowsCalendarRepository:
         start_date: date | None = None,
         end_date: date | None = None,
     ) -> list[Appointment]:
+        """Busca compromissos em um intervalo de datas."""
         self._ensure_connected()
         start_date = start_date or date.today()
         end_date = end_date or (start_date + timedelta(days=30))
@@ -62,6 +72,11 @@ class WindowsCalendarRepository:
         return self._run(self._get_async(entry_id))
 
     async def _connect_async(self) -> None:
+        """
+        Corrotina: solicita acesso de leitura/escrita a todos os calendários.
+
+        Escolhe como padrão o primeiro calendário que permite criar eventos.
+        """
         from winrt.windows.applicationmodel.appointments import (
             AppointmentManager,
             AppointmentStoreAccessType,
@@ -87,12 +102,14 @@ class WindowsCalendarRepository:
     async def _list_async(
         self, start_dt: datetime, span: timedelta
     ) -> list[Appointment]:
+        """Busca compromissos a partir de start_dt durante o período span."""
         items = await self._store.find_appointments_async(start_dt, span)
         appointments = [self._to_appointment(a) for a in items]
         appointments.sort(key=lambda a: a.start)
         return appointments
 
     async def _create_async(self, appointment: Appointment) -> Appointment:
+        """Cria compromisso no calendário padrão."""
         from winrt.windows.applicationmodel.appointments import Appointment as WinAppt
 
         cal = self._default_calendar
@@ -102,6 +119,7 @@ class WindowsCalendarRepository:
         return self._to_appointment(win_appt, cal.local_id)
 
     async def _update_async(self, appointment: Appointment) -> Appointment:
+        """Atualiza compromisso existente (entry_id contém cal_id|appt_id)."""
         cal_id, appt_id = self._parse_entry_id(appointment.entry_id)
         cal = self._get_calendar(cal_id)
         win_appt = await cal.get_appointment_async(appt_id)
@@ -121,12 +139,14 @@ class WindowsCalendarRepository:
         return self._to_appointment(win_appt, cal_id)
 
     def _get_calendar(self, cal_id: str):
+        """Obtém objeto calendário pelo id ou lança erro."""
         cal = self._calendars.get(cal_id)
         if cal is None:
             raise CalendarConnectionError(f"Calendário não encontrado: {cal_id}")
         return cal
 
     def _apply_to_win_appt(self, win_appt, appointment: Appointment) -> None:
+        """Preenche objeto WinRT com dados do Appointment."""
         win_appt.subject = appointment.subject or "(Sem título)"
         win_appt.location = appointment.location or ""
         win_appt.details = appointment.body or ""
@@ -143,6 +163,7 @@ class WindowsCalendarRepository:
             win_appt.duration = delta if delta.total_seconds() > 0 else timedelta(hours=1)
 
     def _to_appointment(self, win_appt, calendar_id: str | None = None) -> Appointment:
+        """Converte objeto WinRT para Appointment com entry_id composto."""
         cal_id = calendar_id or win_appt.calendar_id or self._default_calendar.local_id
         start = self._from_win_datetime(win_appt.start_time)
         duration = win_appt.duration or timedelta(hours=1)
@@ -174,10 +195,12 @@ class WindowsCalendarRepository:
 
     @staticmethod
     def _make_entry_id(calendar_id: str, appointment_id: str) -> str:
+        """Junta ids do calendário e do compromisso em uma única string."""
         return f"{calendar_id}{ENTRY_SEP}{appointment_id}"
 
     @staticmethod
     def _parse_entry_id(entry_id: str) -> tuple[str, str]:
+        """Separa entry_id de volta em (calendário, compromisso)."""
         if ENTRY_SEP in entry_id:
             cal_id, appt_id = entry_id.split(ENTRY_SEP, 1)
             return cal_id, appt_id
@@ -189,4 +212,5 @@ class WindowsCalendarRepository:
 
     @staticmethod
     def _run(coro):
+        """Executa uma corrotina async e retorna o resultado (ponte sync/async)."""
         return asyncio.run(coro)

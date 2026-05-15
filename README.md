@@ -36,13 +36,34 @@ Na primeira execução, o Outlook pode solicitar permissão para acessar o calen
 
 ```
 python-calendario-windows/
-├── main.py                 # Entrada da aplicação
+├── main.py                 # Entrada da aplicação (monta MVC e inicia a janela)
+├── agenda.spec             # Configuração PyInstaller para gerar Agenda.exe
 ├── requirements.txt
 └── app/
-    ├── models/             # Appointment, repositórios de calendário
-    ├── views/              # Interface (CustomTkinter)
-    └── controllers/        # Lógica de negócio
+    ├── models/             # Dados e acesso ao calendário (Outlook COM ou WinRT)
+    │   ├── appointment.py
+    │   ├── calendar_repository.py
+    │   ├── windows_calendar_repository.py
+    │   └── unified_calendar_repository.py
+    ├── views/              # Interface gráfica (CustomTkinter)
+    │   ├── main_view.py
+    │   ├── appointment_dialog.py
+    │   └── date_picker.py
+    └── controllers/        # Liga botões da tela às operações no calendário
+        └── calendar_controller.py
 ```
+
+## Código documentado
+
+Todo o código-fonte principal está comentado em português para facilitar o aprendizado:
+
+- **main.py** — ponto de entrada e fluxo MVC
+- **models** — modelo `Appointment` e repositórios (Outlook preferencial, WinRT como fallback)
+- **views** — janela principal, formulário de compromisso e seletor de data
+- **controllers** — conexão, listagem, criar, editar e excluir
+- **agenda.spec** — empacotamento do executável Windows
+
+Fluxo resumido: a `MainView` exibe a lista; o `CalendarController` recebe os cliques; o `UnifiedCalendarRepository` grava no Calendário do Windows.
 
 ## Tecnologias
 
