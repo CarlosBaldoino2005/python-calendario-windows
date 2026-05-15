@@ -51,6 +51,21 @@ python-calendario-windows/
 - [tkcalendar](https://github.com/j4321/tkcalendar) — seletor de datas
 - [winrt](https://pypi.org/project/winrt/) — API nativa do Calendário Windows (fallback)
 
+## Gerar executável (.exe)
+
+Requisito: `pip install pyinstaller`
+
+```powershell
+cd python-calendario-windows
+python -m PyInstaller agenda.spec --noconfirm
+```
+
+Ou execute `build.bat` (duplo clique).
+
+O arquivo será gerado em: **`dist/Agenda.exe`**
+
+> Requer Windows 10/11 e Outlook ou conta Microsoft configurada no Calendário.
+
 ## Licença
 
 MIT

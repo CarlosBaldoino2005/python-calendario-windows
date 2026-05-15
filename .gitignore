@@ -40,3 +40,8 @@ Desktop.ini
 *.log
 .env
 .env.local
+
+# Build
+build/
+dist/
+*.spec.bak
