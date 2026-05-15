@@ -19,7 +19,7 @@ Aplicativo desktop em Python para gerenciar compromissos (CRUD) integrado ao **C
 ## Instalação
 
 ```powershell
-git clone https://github.com/SEU_USUARIO/python-calendario-windows.git
+git clone https://github.com/CarlosBaldoino2005/python-calendario-windows.git
 cd python-calendario-windows
 pip install -r requirements.txt
 ```
