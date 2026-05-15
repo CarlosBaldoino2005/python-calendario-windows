@@ -1,0 +1,7 @@
+customtkinter>=5.2.2
+pywin32>=306
+tkcalendar>=1.6.1
+babel>=2.14.0
+winrt-Windows.ApplicationModel.Appointments>=3.2.1
+winrt-Windows.Foundation>=3.2.1
+winrt-Windows.Foundation.Collections>=3.2.1
